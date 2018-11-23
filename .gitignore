@@ -4,3 +4,4 @@ dist/
 build/
 gpymusic.egg-info/
 *.pyc
+start
