@@ -5,3 +5,4 @@ build/
 gpymusic.egg-info/
 *.pyc
 start
+*.log

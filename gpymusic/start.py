@@ -254,7 +254,7 @@ def login(user):
     Arguments:
     user: Dict containing auth information.
     """
-    crs.curs_set(0)
+    # crs.curs_set(0)
     common.w.outbar_msg('Logging in...')
     try:
         authmethod = ''

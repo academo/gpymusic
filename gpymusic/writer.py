@@ -1,3 +1,5 @@
+from urwid import *
+
 from . import common
 
 from time import sleep
@@ -5,6 +7,7 @@ from time import sleep
 import curses as crs
 import sys
 
+import logging
 
 class Writer():
 
@@ -131,18 +134,16 @@ class Writer():
 
     def welcome(self):
         """Displays a welcome message."""
-        if not self.curses:
+
+        if not self.urwid:
             if not self.test:
                 print('Welcome to Google Py Music!')
             return
 
-        try:
-            self.main.addstr(
-                5, int(crs.COLS / 2) - 13, 'Welcome to Google Py Music!'
-            )
-            self.main.refresh()
-        except:  # If this errors for some reason, just don't display anything.
-            pass
+        logging.info("GPY aca")
+        common.view.main.original_widget = Text('This is a test')
+        common.view.main.render(1)
+        logging.info("GPY aca 2")
 
     def goodbye(self, msg=''):
         """
@@ -199,7 +200,8 @@ class Writer():
         """
         if self.test:
             return
-        self.addstr(self.outbar, msg)
+        common.view.statusBar.set_text(msg)
+        # self.addstr(self.outbar, msg)
 
     def measure_fields(self, width):
         """
