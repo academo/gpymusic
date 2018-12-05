@@ -61,20 +61,23 @@ class MainFrame(Frame):
         logging.info("Here")
         widget = self.draw_table([])
         columns = self.splitView.contents
-        columns[0] = Filler(Text('whaa'))
-
+        columns[0] = (
+                widget,
+                self.splitView.options()
+                )
 
     def set_main(self, value):
         widget = None
         typeof = type(value)
+        # Simple text is transformed into Text widget
         if typeof is str:
             widget = Text(value)
             self.main.original_widget = widget
+        # A list is transformed into a table
+        # Is assumed this is always a list of lists
         elif typeof is list:
             widget = self.draw_table(value)
-            self.main.original_widget = widget
-
-
+            self.splitView.contents[0] =( widget, self.splitView.options() )
 
     def draw_table(self, list):
         """
@@ -83,25 +86,20 @@ class MainFrame(Frame):
             of columns. Assumes each cell contains a string
         """
 
-        list = [
-                ["this", "is", "a", "test1"],
-                ["this", "is", "a", "test2"],
-                ["this", "is", "a", "test3"]
-               ]
-
         maxcells = len(list[0])
         cellrange = range(maxcells)
         table = []
-        test = []
         for row in list:
             columns = []
-            for cell in cellrange:
-                if cell in row:
-                    test.append(Text(row[cell]))
-                    columns.append(Text(row[cell]))
-                else:
-                    columns.append(Text(''))
-            table.append(Columns(columns))
+            if len(row) > 0 and row[0] == '-':
+                table.append(Divider('-', 1, 1))
+            else:
+                for cell in cellrange:
+                    if cell < len(row):
+                        columns.append(Text(row[cell]))
+                    else:
+                        columns.append(Text(''))
+                table.append(Columns(columns, dividechars=1))
 
         return ListBox(table)
 

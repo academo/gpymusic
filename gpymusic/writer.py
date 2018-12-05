@@ -288,6 +288,8 @@ class Writer():
                 list.append(item)
                 i += 1
 
+        list.append(['-'])
+
         # Artists header.
         if 'artists' in c and c['artists']:
             list.append(["#", "Artist"])
@@ -301,6 +303,8 @@ class Writer():
                        ]
                 list.append(item)
                 i += 1
+
+        list.append(['-'])
 
         # Albums header.
         if 'albums' in c and c['albums']:
