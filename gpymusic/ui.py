@@ -36,15 +36,10 @@ class MainFrame(Frame):
 
         self.player = Text("Not playing anything now")
 
-        self.queue = Frame(body=Filler(Text(" -- Empty queue --"), 'top'), header=Text("Queue songs"), footer=self.player)
-        self.queuebox = LineBox(self.queue, title="Songs Queue", bline='')
-                
-
         self.userInput = UserInput(caption="> ")
         self.statusBar = Text("Waiting for input, type ? for help")
 
-        self.splitView = Columns([self.main, self.queuebox])
-
+        self.splitView = Columns([self.main])
 
         footer = LineBox(
                 Pile([self.statusBar, self.userInput]),
@@ -56,15 +51,6 @@ class MainFrame(Frame):
                 )
 
         super(MainFrame, self).__init__(body=self.splitView, footer=footer, focus_part='footer', *args, **kwargs)
-
-    def test(self):
-        logging.info("Here")
-        widget = self.draw_table([])
-        columns = self.splitView.contents
-        columns[0] = (
-                widget,
-                self.splitView.options()
-                )
 
     def set_main(self, value):
         widget = None
@@ -83,6 +69,8 @@ class MainFrame(Frame):
         """
             Draws a table out of a list of lists
             the first element on the list defined the max amount
+            if a list with a single element containing '-' is found
+            a divider ir drawn in place
             of columns. Assumes each cell contains a string
         """
 
@@ -91,7 +79,7 @@ class MainFrame(Frame):
         table = []
         for row in list:
             columns = []
-            if len(row) > 0 and row[0] == '-':
+            if len(row) == 1 and row[0] == '-':
                 table.append(Divider('-', 1, 1))
             else:
                 for cell in cellrange:

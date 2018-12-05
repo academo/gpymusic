@@ -59,7 +59,6 @@ class Client:
             common.w.display()
         else:
             common.w.error_msg('Non-existent command')
-            common.view.test()
 
     def help(self, arg=0):
         """
@@ -144,7 +143,7 @@ class Client:
         playlists = listdir(path)
         if len(playlists):
             common.v.clear()
-            common.w.main.erase()
+
             common.w.outbar_msg('Listing local playlists')
 
             msg  = "\n==Local playlists available==\n\n"
@@ -152,9 +151,7 @@ class Client:
                 msg = msg + " - " + item + "\n"
             msg = msg + "\n\nUse read [playlist-name] to show playlist"
 
-            common.w.main.addstr(msg)
-            common.w.main.refresh()
-
+            common.view.set_main(msg)
         else:
             common.w.outbar_msg('No local playlist found')
 
