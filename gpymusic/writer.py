@@ -13,7 +13,7 @@ class Writer():
 
     def __init__(
             self, main, inbar, infobar, outbar,
-            curses=True, colour=False, test=False):
+            curses=True, urwid=True, colour=False, test=False):
         """
         Writer constructor.
 
@@ -37,6 +37,7 @@ class Writer():
         self.infobar = infobar
         self.outbar = outbar
         self.curses = curses
+        self.urwid = urwid
         self.colour = colour
         self.test = test
         self.xlimit = self.main.getmaxyx()[1] if main is not None else 0
@@ -51,7 +52,7 @@ class Writer():
         string: String to be truncated.
         ch: Max length for the string.
 
-        Returns: The original string if it is short enough to be displayed,
+        Returns: The original string if it is short enough to  displayed,
           otherwise the string truncated and padded with '...'.
         """
 
@@ -106,17 +107,16 @@ class Writer():
         """
         if self.test:
             return
-        common.np.update(string if string is not None else '')
-        self.addstr(self.infobar, 'Now playing: %s' %
-                    (string if string is not None else 'None'))
+        # common.np.update(string if string is not None else '')
+        # self.addstr(self.infobar, 'Now playing: %s' %
+                    # (string if string is not None else 'None'))
 
     def erase_outbar(self):
         """Erases content on the outbar."""
-        if not self.curses:
+        if not self.curses or not self.urwid:
             return
 
-        self.outbar.erase()
-        self.outbar.refresh()
+        self.outbar_msg('')
 
     def error_msg(self, msg):
         """
@@ -129,8 +129,7 @@ class Writer():
         if self.test:
             return
 
-        self.addstr(
-            self.outbar, 'Error: %s. Enter \'h\' or \'help\' for help.' % msg)
+        self.outbar_msg('Error: %s. Enter \'h\' or \'help\' for help.' % msg)
 
     def welcome(self):
         """Displays a welcome message."""
@@ -140,10 +139,7 @@ class Writer():
                 print('Welcome to Google Py Music!')
             return
 
-        logging.info("GPY aca")
-        common.view.main.original_widget = Text('This is a test')
-        common.view.main.render(1)
-        logging.info("GPY aca 2")
+        common.view.set_main('Welcome to Google Py Music!\n\nType "?" for help')
 
     def goodbye(self, msg=''):
         """
@@ -201,7 +197,6 @@ class Writer():
         if self.test:
             return
         common.view.statusBar.set_text(msg)
-        # self.addstr(self.outbar, msg)
 
     def measure_fields(self, width):
         """
@@ -240,7 +235,7 @@ class Writer():
 
         c = common.v  # Content to display.
 
-        if not self.curses:
+        if not self.curses and not self.urwid:
             if not self.test:
                 i = 1
                 if 'songs' in c and c['songs']:
@@ -260,102 +255,66 @@ class Writer():
                     i += 1
             return
 
-        cl = self.colour
-        self.main.erase()
-        y, i = 0, 1  # y coordinate in main window, current item index.
-        (i_ch, n_ch, ar_ch, al_ch, n_start,
-         ar_start, al_start) = self.measure_fields(self.xlimit)
+        # This list will be rendered by the UI
+        list = []
+
+        # Song index
+        i = 1
 
         # Songs header.
         if 'songs' in c and c['songs']:
-            self.main.addstr(
-                y, 0, '#', crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, n_start, Writer.trunc('Title', n_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, ar_start, Writer.trunc('Artist', ar_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, al_start, Writer.trunc('Album', al_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-
-            y += 1
+            list.append(["#", "Title", "Artist", "Album"])
 
             # Write each song.
             for song in c['songs']:
-                self.main.addstr(
-                    y, 0, str(i).zfill(2),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                self.main.addstr(
-                    y, n_start, Writer.trunc(song['name'], n_ch),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
+                item = []
+                
                 if song['kind'] == 'song':
-                    self.main.addstr(
-                        y, ar_start, Writer.trunc(song['artist']['name'], ar_ch),  # noqa
-                        crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                    self.main.addstr(
-                        y, al_start, Writer.trunc(song['album']['name'], al_ch),  # noqa
-                        crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
+                    item = [
+                            # Number
+                            str(i),
+                            song['name'],
+                            song['artist']['name'],
+                            song['album']['name']
+                           ]
                 else:
-                    self.main.addstr(
-                        y, ar_start, Writer.trunc(song['artist'], ar_ch),
-                        crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                    self.main.addstr(
-                        y, al_start, Writer.trunc(song['album'], al_ch),
-                        crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-
-                y += 1
+                    item = [
+                            # Number
+                            str(i),
+                            song['name'],
+                            song['artist'],
+                            song['album']
+                           ]
+                list.append(item)
                 i += 1
 
         # Artists header.
         if 'artists' in c and c['artists']:
-            self.main.addstr(
-                y, 0, '#', crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, ar_start, Writer.trunc('Artist', n_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-
-            y += 1
+            list.append(["#", "Artist"])
 
             # Write each artist.
             for artist in c['artists']:
-                self.main.addstr(
-                    y, 0, str(i).zfill(2),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                self.main.addstr(
-                    y, n_start, Writer.trunc(artist['name'], n_ch),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-
-                y += 1
+                item = [
+                        # Number
+                        str(i),
+                        artist['name']
+                       ]
+                list.append(item)
                 i += 1
 
         # Albums header.
         if 'albums' in c and c['albums']:
-            self.main.addstr(
-                y, 0, '#', crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, n_start, Writer.trunc('Album', n_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-            self.main.addstr(
-                y, ar_start, Writer.trunc('Artist', ar_ch),
-                crs.color_pair(2) if cl else crs.A_UNDERLINE)
-
-            y += 1
+            list.append(["#", "Album", "Artist"])
 
             # Write each album.
             for album in c['albums']:
-                self.main.addstr(
-                    y, 0, str(i).zfill(2),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                self.main.addstr(
-                    y, n_start, Writer.trunc(album['name'], n_ch),
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-                self.main.addstr(
-                    y, ar_start, Writer.trunc(album['artist']['name'], ar_ch),  # noqa
-                    crs.color_pair(3 if y % 2 == 0 else 4) if cl else 0)
-
-                y += 1
+                item = [
+                        # Number
+                        str(i),
+                        album['name'],
+                        album['artist']['name']
+                       ]
+                list.append(item)
                 i += 1
 
-        self.main.refresh()
+        common.view.set_main(list)

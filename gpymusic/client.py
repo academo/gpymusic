@@ -3,6 +3,7 @@ from . import music_objects
 
 import json
 import zipfile
+import logging
 
 from os.path import exists, isfile, join
 from os import listdir
@@ -15,15 +16,17 @@ class Client:
     """Driver for most of gpymusic's functionality."""
 
     def transition(self, input=""):
+        logging.info("GPY transition %s" % input)
         """
         Route input to the appropriate function.
 
         Keyword arguments:
-        input="": predefined user input. If not set, prompt for input.
+        input="": input coming from urwid
         """
         commands = {
             'h': self.help,
             'help': self.help,
+            '?': self.help,
             'e': self.expand,
             'expand': self.expand,
             'radio': self.radio,
@@ -42,24 +45,21 @@ class Client:
 
         arg = None
         if common.v.is_empty():
-            common.w.addstr(
-                common.w.infobar,
-                'Enter \'h\' or \'help\' if you need help.'
-            )
+            common.w.outbar_msg('Enter \'h\' or \'help\' if you need help.')
         else:
             common.w.now_playing()
 
-        user_input = common.w.get_input() if not input else input
         try:
-            command, arg = (s.strip() for s in user_input.split(maxsplit=1))
+            command, arg = (s.strip() for s in input.split(maxsplit=1))
         except ValueError:  # No argument.
-            command = user_input.strip()
+            command = input.strip()
 
         if command in commands:
             commands[command](arg)
             common.w.display()
         else:
-            common.w.error_msg('Nonexistent command')
+            common.w.error_msg('Non-existent command')
+            common.view.test()
 
     def help(self, arg=0):
         """
@@ -68,32 +68,29 @@ class Client:
         Keyword arguments:
         arg=0: Irrelevant.
         """
-        common.v.clear()
-        if not common.w.curses:
+        if not common.w.urwid:
             return
 
-        common.w.main.erase()
-        common.w.main.addstr(
-        """
-        Commands:
-        s/search search-term: Search for search-term
-        e/expand 123: Expand item number 123
-        radio 123: Create radio station around item number 123
-        p/play: Play the current queue
-        p/play s: Shuffle and play the current queue
-        p/play 123: Play item number 123
-        q/queue: Show the current queue
-        q/queue 123: Add item number 123 to the queue
-        q/queue 1 2 3: Add items 1, 2, and 3 to the queue
-        q/queue c: Clear the current queue
-        w/write playlist-name: Write current queue to playlist playlist-name
-        r/restore playlist-name: Replace the current queue with a playlist
-        l/list: List of playlist  saved on disk
-        h/help: Show this help message
-        Ctrl-C: Exit gpymusic
-        """  # noqa
+        common.view.set_main(
+            """
+            Commands:
+            s/search search-term: Search for search-term
+            e/expand 123: Expand item number 123
+            radio 123: Create radio station around item number 123
+            p/play: Play the current queue
+            p/play s: Shuffle and play the current queue
+            p/play 123: Play item number 123
+            q/queue: Show the current queue
+            q/queue 123: Add item number 123 to the queue
+            q/queue 1 2 3: Add items 1, 2, and 3 to the queue
+            q/queue c: Clear the current queue
+            w/write playlist-name: Write current queue to playlist playlist-name
+            r/restore playlist-name: Replace the current queue with a playlist
+            l/list: List of playlist  saved on disk
+            h/help/?: Show this help message
+            Ctrl-C: Exit gpymusic
+            """  # noqa
         )
-        common.w.main.refresh()
 
     def write(self, fn=None):
         """
@@ -407,6 +404,7 @@ class FreeClient(Client):
         """
         common.q.error_msg('Free users cannot use radio')
 
+    # TODO urwid project: figure out the View structure output
     def search(self, query):
         """
         Search the library for some query. and update the
@@ -419,15 +417,15 @@ class FreeClient(Client):
             common.w.error_msg('Missing search query')
             return
 
-        # Save the current view in case there are no results.
-        cache = common.v.copy()
-
         if common.w.curses:
             limit = common.w.ylimit - 4
         else:
-            limit = 10
-        common.w.outbar_msg('Searching for \'%s\'...' % query)
+            limi = 10
+
+        cache = common.v.copy()
         common.v.clear()
+
+        common.w.outbar_msg('Searching for \'%s\'...' % query)
         count, query = 0, query.lower()  # Search is case-insensitive.
         for song in self.songs:
             if any(query in song[k].lower()
@@ -545,11 +543,7 @@ class FullClient(Client):
         # Save the current view in case there are no results.
         cache = common.v.copy()
 
-        # Fetch as many results as we can display depending on terminal height.
-        if common.w.curses:
-            limit = int((common.w.ylimit - 3) / 3)
-        else:
-            limit = 50
+        limit = 50
 
         common.w.outbar_msg('Searching for \'%s\'...' % query)
         result = common.mc.search(query, max_results=limit)

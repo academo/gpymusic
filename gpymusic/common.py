@@ -1,7 +1,8 @@
 from gmusicapi import Mobileclient
 import urwid
+import logging
 # Imports are stupid.
-mc = Mobileclient()  # noqa Our interface to Google Play Music.
+mc = Mobileclient(debug_logging=False)  # noqa Our interface to Google Play Music.
 
 from . import nowplaying
 from . import songqueue
