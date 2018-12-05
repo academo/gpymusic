@@ -40,7 +40,7 @@ class Client:
             'write': self.write,
             'r': self.restore,
             'restore': self.restore,
-            'list': self.list,
+            'playlists': self.list,
         }
 
         arg = None
@@ -86,7 +86,7 @@ class Client:
             q/queue c: Clear the current queue
             w/write playlist-name: Write current queue to playlist playlist-name
             r/restore playlist-name: Replace the current queue with a playlist
-            l/list: List of playlist  saved on disk
+            playlists: List of playlist  saved on disk
             h/help/?: Show this help message
             Ctrl-C: Exit gpymusic
             """  # noqa
@@ -139,7 +139,7 @@ class Client:
             else:
                 common.q.restore(json_songs)
 
-    def list(self, arg=None):
+    def playlists(self, arg=None):
         path = join(common.DATA_DIR, 'playlists')
         playlists = listdir(path)
         if len(playlists):
